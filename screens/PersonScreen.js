@@ -148,9 +148,9 @@ export default function MovieScreen(props) {
             {personDetails.biography && (
               <>
                 <Text className="text-white font-bold">Biography</Text>
-                {personDetails.biography.length > 500 ? (
+                {personDetails.biography.length > 1000 ? (
                   <Text className="text-neutral-300">
-                    {personDetails.biography.slice(0, 500)}...
+                    {personDetails.biography.slice(0, 1000)}...
                   </Text>
                 ) : (
                   <Text className="text-neutral-300">

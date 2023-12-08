@@ -7,21 +7,39 @@ import {
   SafeAreaView,
   Text,
   ScrollView,
+  FlatList,
 } from "react-native";
-import React, { useState } from "react";
+import axios from "../api/api";
+import React, { useState, useEffect } from "react";
 import { XMarkIcon } from "react-native-heroicons/outline";
 import { useNavigation } from "@react-navigation/native";
+import LoadingIndicator from "../components/LoadingIndicator";
 
 const { width, height } = Dimensions.get("window");
 export default function SearchScreen() {
-  const [results, setResults] = useState([
-    { title: "Marvel" },
-    { title: "Avengers Infinity War" },
-    { title: "Iron Man" },
-  ]);
   const [searchText, setSearchText] = useState("");
-  const [showSearches, setShowSearches] = useState(true);
+  const [showSearches, setShowSearches] = useState(false);
+  const [searches, setSearches] = useState([]);
+  const [loading, setLoading] = useState(true);
+
   const navigation = useNavigation();
+  const getSearches = async (searchText) => {
+    const response = await axios.get(
+      `search/movie?query=${searchText}&include_adult=false&language=en-US&page=1`
+    );
+    setSearches(response.data.results);
+  };
+  const handleResults = () => {
+    if (searchText && searchText.length > 2) {
+      setShowSearches(false);
+      setLoading(true);
+      getSearches(searchText);
+      setTimeout(() => {
+        setLoading(false);
+      }, 2000);
+      setShowSearches(true);
+    }
+  };
   return (
     <SafeAreaView className="bg-neutral-800 flex-1 flex-col">
       <View
@@ -34,7 +52,7 @@ export default function SearchScreen() {
           onChangeText={(value) => setSearchText(value)}
           className="p-2 ml-1 text-white"
           placeholderTextColor={"lightgray"}
-          onFocus={() => setShowSearches(false)}
+          onSubmitEditing={handleResults}
         />
         <TouchableOpacity
           className="bg-neutral-700 rounded-full p-1 m-1"
@@ -45,7 +63,7 @@ export default function SearchScreen() {
           <XMarkIcon size={30} color={"gray"} />
         </TouchableOpacity>
       </View>
-      {showSearches ? (
+      {showSearches == false ? (
         <Image
           source={require("../assets/images/movieTime.png")}
           style={{
@@ -55,28 +73,64 @@ export default function SearchScreen() {
             marginRight: "auto",
           }}
         />
+      ) : loading == true ? (
+        <LoadingIndicator />
       ) : (
         <ScrollView horizontal={false}>
           <View className="mx-4">
-            <Text className="text-white mb-2">Results({results.length})</Text>
+            <Text className="text-white mb-2">Results({searches.length})</Text>
             <View className="flex-row flex-wrap justify-between">
-              {results.map((item, index) => {
+              {/* <ScrollView horizontal={false}> */}
+              {/* <FlatList
+                  data={searches}
+                  renderItem={({ item }) => (
+                    <TouchableOpacity
+                      key={item.id} // Assuming item has an 'id' property
+                      onPress={() => {
+                        navigation.navigate("MovieScreen", item);
+                      }}
+                    >
+                      <View className="m-1">
+                        <Image
+                          source={{
+                            uri: `https://image.tmdb.org/t/p/w500${item.poster_path}`,
+                          }}
+                          style={{ height: height * 0.25, width: width * 0.4 }}
+                          className="rounded-2xl"
+                        />
+                        <Text className="text-neutral-400 text-m">
+                          {item.title}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                  )}
+                /> */}
+              {/* </ScrollView> */}
+              {searches.map((item, index) => {
                 return (
                   <TouchableOpacity
-                    key={index}
+                    key={index} // Assuming item has an 'id' property
                     onPress={() => {
                       navigation.navigate("MovieScreen", item);
                     }}
                   >
                     <View className="m-1">
                       <Image
-                        source={require("../assets/images/moviePoster1.png")}
+                        source={{
+                          uri: `https://image.tmdb.org/t/p/w500${item.poster_path}`,
+                        }}
                         style={{ height: height * 0.25, width: width * 0.4 }}
                         className="rounded-2xl"
                       />
-                      <Text className="text-neutral-400 text-m">
-                        {item.title}
-                      </Text>
+                      {item.title.length > 20 ? (
+                        <Text className="text-neutral-400 text-m">
+                          {item.title.slice(0, 20)}...
+                        </Text>
+                      ) : (
+                        <Text className="text-neutral-400 text-m">
+                          {item.title}
+                        </Text>
+                      )}
                     </View>
                   </TouchableOpacity>
                 );
